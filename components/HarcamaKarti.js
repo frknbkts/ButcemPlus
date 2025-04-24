@@ -146,7 +146,7 @@ const styles = StyleSheet.create({
   tutar: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1A1A1A',
+    color: '#FF5252',
   },
   gelirTutar: {
     color: '#4CAF50',

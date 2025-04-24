@@ -117,7 +117,7 @@ const HarcamaFormu = ({ visible, onClose, onHarcamaEkle, onHarcamaGuncelle, duze
                 <TouchableOpacity
                   style={[
                     styles.tipButton,
-                    tip === 'harcama' && styles.aktifTipButton
+                    tip === 'harcama' && styles.harcamaButton
                   ]}
                   onPress={() => {
                     Keyboard.dismiss();
@@ -133,7 +133,7 @@ const HarcamaFormu = ({ visible, onClose, onHarcamaEkle, onHarcamaGuncelle, duze
                 <TouchableOpacity
                   style={[
                     styles.tipButton,
-                    tip === 'gelir' && styles.aktifTipButton
+                    tip === 'gelir' && styles.gelirButton
                   ]}
                   onPress={() => {
                     Keyboard.dismiss();
@@ -247,10 +247,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#ddd',
     alignItems: 'center',
+    backgroundColor: '#fff'
   },
   aktifTipButton: {
-    backgroundColor: '#4CAF50',
-    borderColor: '#4CAF50',
+    borderColor: 'transparent',
   },
   tipButtonText: {
     fontSize: 16,
@@ -259,6 +259,12 @@ const styles = StyleSheet.create({
   aktifTipButtonText: {
     color: '#fff',
     fontWeight: '600',
+  },
+  harcamaButton: {
+    backgroundColor: '#FF5252',
+  },
+  gelirButton: {
+    backgroundColor: '#4CAF50',
   },
   kategoriBaslik: {
     fontSize: 16,
