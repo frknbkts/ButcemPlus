@@ -1,5 +1,4 @@
 import { Stack } from 'expo-router';
-import AnaEkran from './index';
 
 export default function Layout() {
   return (
@@ -7,11 +6,6 @@ export default function Layout() {
       screenOptions={{
         headerShown: false
       }}
-    >
-      <Stack.Screen
-        name="index"
-        component={AnaEkran}
-      />
-    </Stack>
+    />
   );
 } 

@@ -9,7 +9,7 @@ import Notlar from '../components/Notlar';
 const STORAGE_KEY_HARCAMALAR = '@harcamalar';
 const STORAGE_KEY_AKTIF_SEKME = '@aktif_sekme';
 
-export default function AnaEkran() {
+export default function Index() {
   const [toplamHarcama, setToplamHarcama] = useState(292.50);
   const [harcamalar, setHarcamalar] = useState([]);
   const [formVisible, setFormVisible] = useState(false);

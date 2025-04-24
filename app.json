@@ -4,10 +4,11 @@
     "slug": "ButcemPlus",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.PNG",
+    "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "scheme": "butcemplus",
     "splash": {
-      "image": "./assets/icon.PNG",
+      "image": "./assets/icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -19,18 +20,19 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/icon.PNG",
+        "foregroundImage": "./assets/icon.png",
         "backgroundColor": "#ffffff"
       },
       "package": "com.frknbkts.ButcemPlus"
     },
     "web": {
-      "favicon": "./assets/icon.PNG"
+      "favicon": "./assets/icon.png"
     },
     "extra": {
       "eas": {
         "projectId": "0f3d1e39-3fea-43ab-9e9a-b838bc708c25"
       }
-    }
+    },
+    "newArchEnabled": true
   }
 }
