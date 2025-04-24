@@ -1,79 +1,83 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, Modal, ScrollView, Dimensions } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  Modal, 
+  TextInput, 
+  TouchableOpacity, 
+  ScrollView, 
+  KeyboardAvoidingView, 
+  Platform,
+  TouchableWithoutFeedback,
+  Keyboard
+} from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
-const { width } = Dimensions.get('window');
-const KATEGORI_GENISLIK = (width * 0.8 - 40) / 3; // Modal genişliğinin 3'te 1'i
-
-const kategoriler = [
-  { id: 'kira', ad: 'Kira', ikon: 'home', renk: '#2196F3' },
-  { id: 'ulasim', ad: 'Ulaşım', ikon: 'directions-car', renk: '#FF9800' },
-  { id: 'market', ad: 'Market / Gıda', ikon: 'shopping-basket', renk: '#4CAF50' },
-  { id: 'yemeicme', ad: 'Yeme-İçme', ikon: 'restaurant', renk: '#E91E63' },
-  { id: 'egitim', ad: 'Eğitim', ikon: 'school', renk: '#9C27B0' },
-  { id: 'alisveris', ad: 'Alışveriş', ikon: 'shopping-cart', renk: '#FF5722' },
-  { id: 'eglence', ad: 'Eğlence', ikon: 'sports-esports', renk: '#00BCD4' },
-  { id: 'saglik', ad: 'Sağlık', ikon: 'local-hospital', renk: '#F44336' },
-  { id: 'faturalar', ad: 'Faturalar', ikon: 'receipt', renk: '#607D8B' },
-  { id: 'evcil', ad: 'Evcil Hayvan', ikon: 'pets', renk: '#795548' },
-  { id: 'borc', ad: 'Borç / Kredi', ikon: 'credit-card', renk: '#9E9E9E' },
-  { id: 'abonelik', ad: 'Abonelikler', ikon: 'subscriptions', renk: '#673AB7' },
-];
-
-const HarcamaFormu = ({ visible, onClose, onHarcamaEkle }) => {
+const HarcamaFormu = ({ visible, onClose, onHarcamaEkle, onHarcamaGuncelle, duzenlenecekHarcama }) => {
   const [baslik, setBaslik] = useState('');
   const [tutar, setTutar] = useState('');
   const [tip, setTip] = useState('harcama');
-  const [kategori, setKategori] = useState('market');
+  const [kategori, setKategori] = useState('');
 
-  const handleSubmit = () => {
-    if (!baslik || !tutar) return;
+  const kategoriler = [
+    { id: 'market', icon: 'shopping-cart', label: 'Market', color: '#FF9800' },
+    { id: 'ulasim', icon: 'directions-car', label: 'Ulaşım', color: '#2196F3' },
+    { id: 'kira', icon: 'home', label: 'Kira', color: '#9C27B0' },
+    { id: 'yemeicme', icon: 'restaurant', label: 'Yeme-İçme', color: '#E91E63' },
+    { id: 'alisveris', icon: 'shopping-bag', label: 'Alışveriş', color: '#FF5722' },
+    { id: 'egitim', icon: 'school', label: 'Eğitim', color: '#009688' },
+    { id: 'eglence', icon: 'local-movies', label: 'Eğlence', color: '#673AB7' },
+    { id: 'saglik', icon: 'local-hospital', label: 'Sağlık', color: '#F44336' },
+    { id: 'faturalar', icon: 'receipt', label: 'Faturalar', color: '#607D8B' },
+    { id: 'evcil', icon: 'pets', label: 'Evcil Hayvan', color: '#795548' },
+    { id: 'borc', icon: 'money-off', label: 'Borç', color: '#FFC107' },
+    { id: 'abonelik', icon: 'subscriptions', label: 'Abonelik', color: '#00BCD4' },
+    { id: 'gelir', icon: 'attach-money', label: 'Gelir', color: '#4CAF50' }
+  ];
 
-    const yeniHarcama = {
-      id: Date.now(),
-      baslik,
+  useEffect(() => {
+    if (duzenlenecekHarcama) {
+      setBaslik(duzenlenecekHarcama.baslik);
+      setTutar(duzenlenecekHarcama.tutar.toString());
+      setTip(duzenlenecekHarcama.tip);
+      setKategori(duzenlenecekHarcama.kategori);
+    } else {
+      setBaslik('');
+      setTutar('');
+      setTip('harcama');
+      setKategori('');
+    }
+  }, [duzenlenecekHarcama]);
+
+  const handleKaydet = () => {
+    if (!baslik.trim() || !tutar || !kategori) return;
+
+    const harcamaVerisi = {
+      id: duzenlenecekHarcama?.id || Date.now(),
+      baslik: baslik.trim(),
       tutar: parseFloat(tutar),
-      zaman: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }),
       tip,
-      kategori: tip === 'harcama' ? kategori : 'gelir'
+      kategori,
+      zaman: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }),
+      tarih: new Date().toISOString().split('T')[0]
     };
 
-    onHarcamaEkle(yeniHarcama);
+    if (duzenlenecekHarcama) {
+      onHarcamaGuncelle(harcamaVerisi);
+    } else {
+      onHarcamaEkle(harcamaVerisi);
+    }
+
+    handleKapat();
+  };
+
+  const handleKapat = () => {
     setBaslik('');
     setTutar('');
     setTip('harcama');
-    setKategori('market');
+    setKategori('');
     onClose();
-  };
-
-  const renderKategoriGrid = () => {
-    return (
-      <View style={styles.kategoriGrid}>
-        {kategoriler.map((kategoriItem) => (
-          <TouchableOpacity
-            key={kategoriItem.id}
-            style={[
-              styles.kategoriButton,
-              { width: KATEGORI_GENISLIK },
-              kategori === kategoriItem.id && {
-                backgroundColor: `${kategoriItem.renk}20`,
-                borderColor: kategoriItem.renk,
-              }
-            ]}
-            onPress={() => setKategori(kategoriItem.id)}
-          >
-            <MaterialIcons
-              name={kategoriItem.ikon}
-              size={24}
-              color={kategoriItem.renk}
-            />
-            <Text style={styles.kategoriText} numberOfLines={2}>
-              {kategoriItem.ad}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-    );
   };
 
   return (
@@ -81,84 +85,123 @@ const HarcamaFormu = ({ visible, onClose, onHarcamaEkle }) => {
       visible={visible}
       animationType="slide"
       transparent={true}
+      onRequestClose={handleKapat}
     >
-      <View style={styles.modalContainer}>
-        <View style={styles.formContainer}>
-          <Text style={styles.baslik}>Yeni Harcama Ekle</Text>
-          
-          <TextInput
-            style={styles.input}
-            placeholder="Başlık"
-            value={baslik}
-            onChangeText={setBaslik}
-          />
-          
-          <TextInput
-            style={styles.input}
-            placeholder="Tutar"
-            value={tutar}
-            onChangeText={setTutar}
-            keyboardType="numeric"
-          />
-
-          <View style={styles.tipContainer}>
-            <TouchableOpacity
-              style={[
-                styles.tipButton,
-                tip === 'harcama' ? styles.harcamaButtonActive : styles.harcamaButton
-              ]}
-              onPress={() => setTip('harcama')}
-            >
-              <Text style={[
-                styles.tipButtonText,
-                tip === 'harcama' && styles.tipButtonTextActive
-              ]}>
-                Harcama
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.modalContainer}
+      >
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalBaslik}>
+                {duzenlenecekHarcama ? 'Harcama Düzenle' : 'Yeni Harcama Ekle'}
               </Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity
-              style={[
-                styles.tipButton,
-                tip === 'gelir' ? styles.gelirButtonActive : styles.gelirButton
-              ]}
-              onPress={() => setTip('gelir')}
-            >
-              <Text style={[
-                styles.tipButtonText,
-                tip === 'gelir' && styles.tipButtonTextActive
-              ]}>
-                Gelir
-              </Text>
-            </TouchableOpacity>
-          </View>
 
-          {tip === 'harcama' && (
-            <View style={styles.kategoriContainer}>
+              <TextInput
+                style={styles.input}
+                placeholder="Başlık"
+                value={baslik}
+                onChangeText={setBaslik}
+              />
+
+              <TextInput
+                style={styles.input}
+                placeholder="Tutar"
+                value={tutar}
+                onChangeText={setTutar}
+                keyboardType="numeric"
+              />
+
+              <View style={styles.tipContainer}>
+                <TouchableOpacity
+                  style={[
+                    styles.tipButton,
+                    tip === 'harcama' && styles.aktifTipButton
+                  ]}
+                  onPress={() => {
+                    Keyboard.dismiss();
+                    setTip('harcama');
+                  }}
+                >
+                  <Text style={[
+                    styles.tipButtonText,
+                    tip === 'harcama' && styles.aktifTipButtonText
+                  ]}>Harcama</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.tipButton,
+                    tip === 'gelir' && styles.aktifTipButton
+                  ]}
+                  onPress={() => {
+                    Keyboard.dismiss();
+                    setTip('gelir');
+                  }}
+                >
+                  <Text style={[
+                    styles.tipButtonText,
+                    tip === 'gelir' && styles.aktifTipButtonText
+                  ]}>Gelir</Text>
+                </TouchableOpacity>
+              </View>
+
               <Text style={styles.kategoriBaslik}>Kategori Seçin</Text>
-              <ScrollView style={styles.kategoriScroll}>
-                {renderKategoriGrid()}
+              
+              <ScrollView 
+                style={styles.kategorilerContainer}
+                keyboardShouldPersistTaps="handled"
+              >
+                <View style={styles.kategorilerGrid}>
+                  {kategoriler.map((kat) => (
+                    <TouchableOpacity
+                      key={kat.id}
+                      style={[
+                        styles.kategoriButton,
+                        kategori === kat.id && { backgroundColor: kat.color + '20' }
+                      ]}
+                      onPress={() => {
+                        Keyboard.dismiss();
+                        setKategori(kat.id);
+                      }}
+                    >
+                      <View style={[styles.iconContainer, { backgroundColor: kat.color }]}>
+                        <MaterialIcons name={kat.icon} size={24} color="#fff" />
+                      </View>
+                      <Text style={styles.kategoriLabel}>{kat.label}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
               </ScrollView>
-            </View>
-          )}
 
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity
-              style={[styles.button, styles.iptalButton]}
-              onPress={onClose}
-            >
-              <Text style={styles.buttonText}>İptal</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity
-              style={[styles.button, styles.kaydetButton]}
-              onPress={handleSubmit}
-            >
-              <Text style={styles.buttonText}>Kaydet</Text>
-            </TouchableOpacity>
+              <View style={styles.butonContainer}>
+                <TouchableOpacity
+                  style={[styles.buton, styles.iptalButon]}
+                  onPress={() => {
+                    Keyboard.dismiss();
+                    handleKapat();
+                  }}
+                >
+                  <Text style={styles.iptalButonText}>İptal</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.buton, styles.kaydetButon]}
+                  onPress={() => {
+                    Keyboard.dismiss();
+                    handleKaydet();
+                  }}
+                >
+                  <Text style={styles.kaydetButonText}>
+                    {duzenlenecekHarcama ? 'Güncelle' : 'Kaydet'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
           </View>
-        </View>
-      </View>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
     </Modal>
   );
 };
@@ -170,19 +213,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
-  formContainer: {
-    width: '80%',
+  modalContent: {
+    width: '90%',
     backgroundColor: '#fff',
-    padding: 20,
     borderRadius: 12,
-    elevation: 5,
-    maxHeight: '80%',
+    padding: 20,
+    maxHeight: '90%',
   },
-  baslik: {
+  modalBaslik: {
     fontSize: 20,
     fontWeight: '600',
     marginBottom: 20,
     textAlign: 'center',
+    color: '#1A1A1A',
   },
   input: {
     borderWidth: 1,
@@ -194,91 +237,93 @@ const styles = StyleSheet.create({
   },
   tipContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     marginBottom: 20,
+    gap: 12,
   },
   tipButton: {
     flex: 1,
-    padding: 12,
+    paddingVertical: 12,
     borderRadius: 8,
-    marginHorizontal: 4,
     borderWidth: 1,
+    borderColor: '#ddd',
+    alignItems: 'center',
   },
-  harcamaButton: {
-    borderColor: '#F44336',
-    backgroundColor: '#fff',
-  },
-  harcamaButtonActive: {
-    borderColor: '#F44336',
-    backgroundColor: '#F44336',
-  },
-  gelirButton: {
-    borderColor: '#4CAF50',
-    backgroundColor: '#fff',
-  },
-  gelirButtonActive: {
-    borderColor: '#4CAF50',
+  aktifTipButton: {
     backgroundColor: '#4CAF50',
+    borderColor: '#4CAF50',
   },
   tipButtonText: {
-    textAlign: 'center',
+    fontSize: 16,
     color: '#666',
   },
-  tipButtonTextActive: {
+  aktifTipButtonText: {
     color: '#fff',
-  },
-  kategoriContainer: {
-    marginBottom: 20,
+    fontWeight: '600',
   },
   kategoriBaslik: {
     fontSize: 16,
     fontWeight: '600',
-    marginBottom: 8,
+    marginBottom: 12,
     color: '#1A1A1A',
   },
-  kategoriScroll: {
-    maxHeight: 200,
+  kategorilerContainer: {
+    maxHeight: 320,
+    marginBottom: 20,
   },
-  kategoriGrid: {
+  kategorilerGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'flex-start',
+    width: '100%',
   },
   kategoriButton: {
-    flexDirection: 'column',
+    width: '30%',
+    aspectRatio: 1,
+    borderRadius: 12,
+    padding: 8,
     alignItems: 'center',
-    padding: 12,
-    marginBottom: 8,
-    borderRadius: 8,
+    justifyContent: 'center',
     borderWidth: 1,
     borderColor: '#ddd',
-    height: 80,
+    margin: '1.65%',
   },
-  kategoriText: {
-    marginTop: 4,
+  iconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  kategoriLabel: {
     fontSize: 12,
-    color: '#666',
+    color: '#1A1A1A',
     textAlign: 'center',
   },
-  buttonContainer: {
+  butonContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    gap: 12,
   },
-  button: {
+  buton: {
     flex: 1,
-    padding: 12,
+    paddingVertical: 12,
     borderRadius: 8,
-    marginHorizontal: 4,
+    alignItems: 'center',
   },
-  iptalButton: {
-    backgroundColor: '#F44336',
+  iptalButon: {
+    backgroundColor: '#FF5252',
   },
-  kaydetButton: {
+  kaydetButon: {
     backgroundColor: '#4CAF50',
   },
-  buttonText: {
+  iptalButonText: {
     color: '#fff',
-    textAlign: 'center',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  kaydetButonText: {
+    color: '#fff',
+    fontSize: 16,
     fontWeight: '600',
   },
 });

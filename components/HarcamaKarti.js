@@ -1,61 +1,103 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
-const getIkon = (kategori) => {
-  switch (kategori) {
-    case 'kira':
-      return { name: 'home', color: '#2196F3' };
-    case 'ulasim':
-      return { name: 'directions-car', color: '#FF9800' };
-    case 'market':
-      return { name: 'shopping-basket', color: '#4CAF50' };
-    case 'yemeicme':
-      return { name: 'restaurant', color: '#E91E63' };
-    case 'egitim':
-      return { name: 'school', color: '#9C27B0' };
-    case 'alisveris':
-      return { name: 'shopping-cart', color: '#FF5722' };
-    case 'eglence':
-      return { name: 'sports-esports', color: '#00BCD4' };
-    case 'saglik':
-      return { name: 'local-hospital', color: '#F44336' };
-    case 'faturalar':
-      return { name: 'receipt', color: '#607D8B' };
-    case 'evcil':
-      return { name: 'pets', color: '#795548' };
-    case 'borc':
-      return { name: 'credit-card', color: '#9E9E9E' };
-    case 'abonelik':
-      return { name: 'subscriptions', color: '#673AB7' };
-    case 'gelir':
-      return { name: 'account-balance', color: '#4CAF50' };
-    default:
-      return { name: 'shopping-bag', color: '#9E9E9E' };
-  }
-};
+const HarcamaKarti = ({ harcama, onSil, onDuzenle }) => {
+  const getKategoriIcon = () => {
+    switch (harcama.kategori) {
+      case 'market':
+        return 'shopping-cart';
+      case 'yemeicme':
+        return 'restaurant';
+      case 'ulasim':
+        return 'directions-car';
+      case 'kira':
+        return 'home';
+      case 'egitim':
+        return 'school';
+      case 'alisveris':
+        return 'shopping-bag';
+      case 'eglence':
+        return 'local-movies';
+      case 'saglik':
+        return 'local-hospital';
+      case 'faturalar':
+        return 'receipt';
+      case 'evcil':
+        return 'pets';
+      case 'borc':
+        return 'money-off';
+      case 'abonelik':
+        return 'subscriptions';
+      case 'gelir':
+        return 'attach-money';
+      default:
+        return 'payment';
+    }
+  };
 
-const HarcamaKarti = ({ harcama }) => {
-  const isGelir = harcama.tip === 'gelir';
-  const tutarRengi = isGelir ? '#4CAF50' : '#F44336';
-  const tutarIsareti = isGelir ? '+' : '-';
-  const ikon = getIkon(harcama.kategori);
+  const getKategoriRenk = () => {
+    switch (harcama.kategori) {
+      case 'market':
+        return '#FF9800';
+      case 'yemeicme':
+        return '#E91E63';
+      case 'ulasim':
+        return '#2196F3';
+      case 'kira':
+        return '#9C27B0';
+      case 'egitim':
+        return '#009688';
+      case 'alisveris':
+        return '#FF5722';
+      case 'eglence':
+        return '#673AB7';
+      case 'saglik':
+        return '#F44336';
+      case 'faturalar':
+        return '#607D8B';
+      case 'evcil':
+        return '#795548';
+      case 'borc':
+        return '#FFC107';
+      case 'abonelik':
+        return '#00BCD4';
+      case 'gelir':
+        return '#4CAF50';
+      default:
+        return '#9E9E9E';
+    }
+  };
 
   return (
     <View style={styles.kart}>
-      <View style={styles.solKisim}>
-        <View style={[styles.ikonContainer, { backgroundColor: `${ikon.color}20` }]}>
-          <MaterialIcons name={ikon.name} size={24} color={ikon.color} />
+      <View style={styles.kartSol}>
+        <View style={[styles.iconContainer, { backgroundColor: getKategoriRenk() }]}>
+          <MaterialIcons name={getKategoriIcon()} size={24} color="#fff" />
         </View>
         <View style={styles.bilgiContainer}>
           <Text style={styles.baslik}>{harcama.baslik}</Text>
           <Text style={styles.zaman}>{harcama.zaman}</Text>
         </View>
       </View>
-      <View style={styles.sagKisim}>
-        <Text style={[styles.tutar, { color: tutarRengi }]}>
-          {tutarIsareti}₺{Math.abs(harcama.tutar).toFixed(2)}
+      <View style={styles.kartSag}>
+        <Text style={[styles.tutar, harcama.tip === 'gelir' && styles.gelirTutar]}>
+          {harcama.tip === 'gelir' ? '+' : '-'}₺{harcama.tutar.toFixed(2)}
         </Text>
+        <View style={styles.islemButonlari}>
+          <TouchableOpacity
+            style={styles.duzenleButton}
+            onPress={() => onDuzenle(harcama)}
+          >
+            <MaterialIcons name="edit" size={20} color="#2196F3" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.silButton}
+            onPress={() => onSil(harcama.id)}
+          >
+            <MaterialIcons name="delete" size={20} color="#FF5252" />
+          </TouchableOpacity>
+        </View>
       </View>
     </View>
   );
@@ -66,25 +108,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
     backgroundColor: '#fff',
-    marginVertical: 4,
-    marginHorizontal: 16,
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+    padding: 16,
+    marginBottom: 8,
+    borderRadius: 8,
+    elevation: 2,
   },
-  solKisim: {
+  kartSol: {
     flexDirection: 'row',
     alignItems: 'center',
+    flex: 1,
   },
-  ikonContainer: {
+  iconContainer: {
     width: 40,
     height: 40,
     borderRadius: 20,
@@ -93,22 +128,39 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   bilgiContainer: {
-    justifyContent: 'center',
+    flex: 1,
   },
   baslik: {
     fontSize: 16,
     fontWeight: '600',
     color: '#1A1A1A',
+    marginBottom: 4,
   },
   zaman: {
     fontSize: 12,
     color: '#666',
-    marginTop: 4,
   },
-  sagKisim: {},
+  kartSag: {
+    alignItems: 'flex-end',
+  },
   tutar: {
     fontSize: 16,
     fontWeight: '600',
+    color: '#1A1A1A',
+  },
+  gelirTutar: {
+    color: '#4CAF50',
+  },
+  islemButonlari: {
+    flexDirection: 'row',
+    marginTop: 8,
+  },
+  duzenleButton: {
+    padding: 4,
+    marginRight: 8,
+  },
+  silButton: {
+    padding: 4,
   },
 });
 
