@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   View, 
   Text, 
@@ -9,25 +9,62 @@ import {
   Modal
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const STORAGE_KEY_NOTLAR = '@notlar';
+const STORAGE_KEY_AKTIF_TAB = '@notlar_aktif_tab';
 
 const Notlar = () => {
   const [notlar, setNotlar] = useState({
-    borclar: [
-      { id: 1, icerik: 'Ahmet\'e 250 TL borcum var', tarih: '2024-04-24' },
-      { id: 2, icerik: 'Ayşe\'ye 100 TL borcum var', tarih: '2024-04-23' }
-    ],
-    alacaklar: [
-      { id: 1, icerik: 'Mehmet\'ten 500 TL alacağım var', tarih: '2024-04-22' }
-    ],
-    alinacaklar: [
-      { id: 1, icerik: 'Market alışverişi yapılacak', tarih: '2024-04-24' }
-    ]
+    borclar: [],
+    alacaklar: [],
+    alinacaklar: []
   });
 
   const [aktifTab, setAktifTab] = useState('borclar');
   const [modalVisible, setModalVisible] = useState(false);
   const [duzenlenecekNot, setDuzenlenecekNot] = useState(null);
   const [notMetni, setNotMetni] = useState('');
+
+  // Uygulama açıldığında verileri yükle
+  useEffect(() => {
+    verileriYukle();
+  }, []);
+
+  // Verileri AsyncStorage'dan yükle
+  const verileriYukle = async () => {
+    try {
+      const notlarJson = await AsyncStorage.getItem(STORAGE_KEY_NOTLAR);
+      const aktifTabJson = await AsyncStorage.getItem(STORAGE_KEY_AKTIF_TAB);
+      
+      if (notlarJson) {
+        setNotlar(JSON.parse(notlarJson));
+      }
+      if (aktifTabJson) {
+        setAktifTab(JSON.parse(aktifTabJson));
+      }
+    } catch (error) {
+      console.error('Veriler yüklenirken hata oluştu:', error);
+    }
+  };
+
+  // Notları AsyncStorage'a kaydet
+  const notlariKaydet = async (yeniNotlar) => {
+    try {
+      await AsyncStorage.setItem(STORAGE_KEY_NOTLAR, JSON.stringify(yeniNotlar));
+    } catch (error) {
+      console.error('Notlar kaydedilirken hata oluştu:', error);
+    }
+  };
+
+  // Aktif tabı AsyncStorage'a kaydet
+  const aktifTabiKaydet = async (yeniTab) => {
+    try {
+      await AsyncStorage.setItem(STORAGE_KEY_AKTIF_TAB, JSON.stringify(yeniTab));
+    } catch (error) {
+      console.error('Aktif tab kaydedilirken hata oluştu:', error);
+    }
+  };
 
   const handleNotEkle = () => {
     if (!notMetni.trim()) return;
@@ -38,11 +75,13 @@ const Notlar = () => {
       tarih: new Date().toISOString().split('T')[0]
     };
 
-    setNotlar(oncekiNotlar => ({
-      ...oncekiNotlar,
-      [aktifTab]: [yeniNot, ...oncekiNotlar[aktifTab]]
-    }));
+    const yeniNotlar = {
+      ...notlar,
+      [aktifTab]: [yeniNot, ...notlar[aktifTab]]
+    };
 
+    setNotlar(yeniNotlar);
+    notlariKaydet(yeniNotlar);
     setNotMetni('');
     setModalVisible(false);
   };
@@ -50,31 +89,41 @@ const Notlar = () => {
   const handleNotGuncelle = () => {
     if (!notMetni.trim() || !duzenlenecekNot) return;
 
-    setNotlar(oncekiNotlar => ({
-      ...oncekiNotlar,
-      [aktifTab]: oncekiNotlar[aktifTab].map(not => 
+    const yeniNotlar = {
+      ...notlar,
+      [aktifTab]: notlar[aktifTab].map(not => 
         not.id === duzenlenecekNot.id 
           ? { ...not, icerik: notMetni.trim() }
           : not
       )
-    }));
+    };
 
+    setNotlar(yeniNotlar);
+    notlariKaydet(yeniNotlar);
     setNotMetni('');
     setDuzenlenecekNot(null);
     setModalVisible(false);
   };
 
   const handleNotSil = (id) => {
-    setNotlar(oncekiNotlar => ({
-      ...oncekiNotlar,
-      [aktifTab]: oncekiNotlar[aktifTab].filter(not => not.id !== id)
-    }));
+    const yeniNotlar = {
+      ...notlar,
+      [aktifTab]: notlar[aktifTab].filter(not => not.id !== id)
+    };
+
+    setNotlar(yeniNotlar);
+    notlariKaydet(yeniNotlar);
   };
 
   const handleNotDuzenle = (not) => {
     setDuzenlenecekNot(not);
     setNotMetni(not.icerik);
     setModalVisible(true);
+  };
+
+  const handleTabDegistir = (yeniTab) => {
+    setAktifTab(yeniTab);
+    aktifTabiKaydet(yeniTab);
   };
 
   const getTabBaslik = () => {
@@ -91,7 +140,7 @@ const Notlar = () => {
       <View style={styles.tabBar}>
         <TouchableOpacity
           style={[styles.tabButton, aktifTab === 'borclar' && styles.aktifTab]}
-          onPress={() => setAktifTab('borclar')}
+          onPress={() => handleTabDegistir('borclar')}
         >
           <Text style={[styles.tabText, aktifTab === 'borclar' && styles.aktifTabText]}>
             Borçlarım
@@ -99,7 +148,7 @@ const Notlar = () => {
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.tabButton, aktifTab === 'alacaklar' && styles.aktifTab]}
-          onPress={() => setAktifTab('alacaklar')}
+          onPress={() => handleTabDegistir('alacaklar')}
         >
           <Text style={[styles.tabText, aktifTab === 'alacaklar' && styles.aktifTabText]}>
             Alacaklarım
@@ -107,7 +156,7 @@ const Notlar = () => {
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.tabButton, aktifTab === 'alinacaklar' && styles.aktifTab]}
-          onPress={() => setAktifTab('alinacaklar')}
+          onPress={() => handleTabDegistir('alinacaklar')}
         >
           <Text style={[styles.tabText, aktifTab === 'alinacaklar' && styles.aktifTabText]}>
             Alınacaklar

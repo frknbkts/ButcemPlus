@@ -1,50 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Modal, Alert } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import HarcamaKarti from '../components/HarcamaKarti';
 import HarcamaFormu from '../components/HarcamaFormu';
 import Notlar from '../components/Notlar';
 
-const AnaEkran = () => {
+const STORAGE_KEY_HARCAMALAR = '@harcamalar';
+const STORAGE_KEY_AKTIF_SEKME = '@aktif_sekme';
+
+export default function AnaEkran() {
   const [toplamHarcama, setToplamHarcama] = useState(292.50);
-  const [harcamalar, setHarcamalar] = useState([
-    {
-      id: 1,
-      baslik: 'Evcil Hayvan',
-      tutar: 3.35,
-      zaman: '9:35 AM',
-      tip: 'harcama',
-      tarih: '2024-04-24',
-      kategori: 'evcil'
-    },
-    {
-      id: 2,
-      baslik: 'Atıştırmalık',
-      tutar: 1.70,
-      zaman: '8:24 AM',
-      tip: 'harcama',
-      tarih: '2024-04-24',
-      kategori: 'yemeicme'
-    },
-    {
-      id: 3,
-      baslik: 'Kahve',
-      tutar: 2.19,
-      zaman: '7:45 AM',
-      tip: 'harcama',
-      tarih: '2024-04-24',
-      kategori: 'yemeicme'
-    },
-    {
-      id: 4,
-      baslik: 'Maaş',
-      tutar: 2300.00,
-      zaman: '7:44 AM',
-      tip: 'gelir',
-      tarih: '2024-04-24',
-      kategori: 'gelir'
-    }
-  ]);
+  const [harcamalar, setHarcamalar] = useState([]);
   const [formVisible, setFormVisible] = useState(false);
   const [aktifGorunum, setAktifGorunum] = useState('gunluk');
   const [filtreModalVisible, setFiltreModalVisible] = useState(false);
@@ -53,13 +20,55 @@ const AnaEkran = () => {
   const [aktifSekme, setAktifSekme] = useState('harcamalar');
   const [duzenlenecekHarcama, setDuzenlenecekHarcama] = useState(null);
 
+  // Uygulama açıldığında verileri yükle
+  useEffect(() => {
+    verileriYukle();
+  }, []);
+
+  // Verileri AsyncStorage'dan yükle
+  const verileriYukle = async () => {
+    try {
+      const harcamalarJson = await AsyncStorage.getItem(STORAGE_KEY_HARCAMALAR);
+      const aktifSekmeJson = await AsyncStorage.getItem(STORAGE_KEY_AKTIF_SEKME);
+      
+      if (harcamalarJson) {
+        setHarcamalar(JSON.parse(harcamalarJson));
+      }
+      if (aktifSekmeJson) {
+        setAktifSekme(JSON.parse(aktifSekmeJson));
+      }
+    } catch (error) {
+      console.error('Veriler yüklenirken hata oluştu:', error);
+    }
+  };
+
+  // Harcamaları AsyncStorage'a kaydet
+  const harcamalariKaydet = async (yeniHarcamalar) => {
+    try {
+      await AsyncStorage.setItem(STORAGE_KEY_HARCAMALAR, JSON.stringify(yeniHarcamalar));
+    } catch (error) {
+      console.error('Harcamalar kaydedilirken hata oluştu:', error);
+    }
+  };
+
+  // Aktif sekmeyi AsyncStorage'a kaydet
+  const aktifSekmeyiKaydet = async (yeniSekme) => {
+    try {
+      await AsyncStorage.setItem(STORAGE_KEY_AKTIF_SEKME, JSON.stringify(yeniSekme));
+    } catch (error) {
+      console.error('Aktif sekme kaydedilirken hata oluştu:', error);
+    }
+  };
+
   const handleHarcamaEkle = (yeniHarcama) => {
     const tamHarcama = {
       ...yeniHarcama,
       id: Date.now(),
       tarih: new Date().toISOString().split('T')[0]
     };
-    setHarcamalar([tamHarcama, ...harcamalar]);
+    const yeniHarcamalar = [tamHarcama, ...harcamalar];
+    setHarcamalar(yeniHarcamalar);
+    harcamalariKaydet(yeniHarcamalar);
     if (yeniHarcama.tip === 'harcama') {
       setToplamHarcama(toplamHarcama + yeniHarcama.tutar);
     }
@@ -72,9 +81,11 @@ const AnaEkran = () => {
   };
 
   const handleHarcamaGuncelle = (guncelHarcama) => {
-    setHarcamalar(harcamalar.map(h => 
+    const yeniHarcamalar = harcamalar.map(h => 
       h.id === guncelHarcama.id ? guncelHarcama : h
-    ));
+    );
+    setHarcamalar(yeniHarcamalar);
+    harcamalariKaydet(yeniHarcamalar);
     setDuzenlenecekHarcama(null);
     setFormVisible(false);
   };
@@ -95,7 +106,9 @@ const AnaEkran = () => {
             if (silinecekHarcama.tip === 'harcama') {
               setToplamHarcama(toplamHarcama - silinecekHarcama.tutar);
             }
-            setHarcamalar(harcamalar.filter(h => h.id !== id));
+            const yeniHarcamalar = harcamalar.filter(h => h.id !== id);
+            setHarcamalar(yeniHarcamalar);
+            harcamalariKaydet(yeniHarcamalar);
           }
         }
       ]
@@ -378,7 +391,7 @@ const AnaEkran = () => {
       {renderIcerik()}
     </SafeAreaView>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
@@ -578,6 +591,4 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '600',
   },
-});
-
-export default AnaEkran; 
+}); 
