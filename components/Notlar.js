@@ -1,5 +1,13 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Modal } from 'react-native';
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  TouchableOpacity, 
+  TextInput, 
+  ScrollView, 
+  Modal
+} from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
 const Notlar = () => {
@@ -18,115 +26,63 @@ const Notlar = () => {
 
   const [aktifTab, setAktifTab] = useState('borclar');
   const [modalVisible, setModalVisible] = useState(false);
-  const [yeniNot, setYeniNot] = useState('');
   const [duzenlenecekNot, setDuzenlenecekNot] = useState(null);
+  const [notMetni, setNotMetni] = useState('');
 
   const handleNotEkle = () => {
-    if (yeniNot.trim() === '') return;
+    if (!notMetni.trim()) return;
 
-    const yeniNotObj = {
+    const yeniNot = {
       id: Date.now(),
-      icerik: yeniNot,
+      icerik: notMetni.trim(),
       tarih: new Date().toISOString().split('T')[0]
     };
 
-    setNotlar({
-      ...notlar,
-      [aktifTab]: [...notlar[aktifTab], yeniNotObj]
-    });
+    setNotlar(oncekiNotlar => ({
+      ...oncekiNotlar,
+      [aktifTab]: [yeniNot, ...oncekiNotlar[aktifTab]]
+    }));
 
-    setYeniNot('');
+    setNotMetni('');
     setModalVisible(false);
   };
 
   const handleNotGuncelle = () => {
-    if (yeniNot.trim() === '' || !duzenlenecekNot) return;
+    if (!notMetni.trim() || !duzenlenecekNot) return;
 
-    setNotlar({
-      ...notlar,
-      [aktifTab]: notlar[aktifTab].map(not => 
+    setNotlar(oncekiNotlar => ({
+      ...oncekiNotlar,
+      [aktifTab]: oncekiNotlar[aktifTab].map(not => 
         not.id === duzenlenecekNot.id 
-          ? { ...not, icerik: yeniNot }
+          ? { ...not, icerik: notMetni.trim() }
           : not
       )
-    });
+    }));
 
-    setYeniNot('');
+    setNotMetni('');
     setDuzenlenecekNot(null);
     setModalVisible(false);
   };
 
   const handleNotSil = (id) => {
-    setNotlar({
-      ...notlar,
-      [aktifTab]: notlar[aktifTab].filter(not => not.id !== id)
-    });
+    setNotlar(oncekiNotlar => ({
+      ...oncekiNotlar,
+      [aktifTab]: oncekiNotlar[aktifTab].filter(not => not.id !== id)
+    }));
   };
 
   const handleNotDuzenle = (not) => {
     setDuzenlenecekNot(not);
-    setYeniNot(not.icerik);
+    setNotMetni(not.icerik);
     setModalVisible(true);
   };
 
-  const NotModal = () => (
-    <Modal
-      visible={modalVisible}
-      animationType="slide"
-      transparent={true}
-      onRequestClose={() => {
-        setModalVisible(false);
-        setDuzenlenecekNot(null);
-        setYeniNot('');
-      }}
-    >
-      <View style={styles.modalContainer}>
-        <View style={styles.modalContent}>
-          <Text style={styles.modalBaslik}>
-            {duzenlenecekNot ? 'Notu Düzenle' : 'Yeni Not Ekle'}
-          </Text>
-          <TextInput
-            style={styles.notInput}
-            placeholder="Notunuzu yazın..."
-            value={yeniNot}
-            onChangeText={setYeniNot}
-            multiline
-          />
-          <View style={styles.modalButonlar}>
-            <TouchableOpacity
-              style={[styles.modalButton, styles.iptalButton]}
-              onPress={() => {
-                setModalVisible(false);
-                setDuzenlenecekNot(null);
-                setYeniNot('');
-              }}
-            >
-              <Text style={styles.iptalButtonText}>İptal</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.modalButton, styles.kaydetButton]}
-              onPress={duzenlenecekNot ? handleNotGuncelle : handleNotEkle}
-            >
-              <Text style={styles.kaydetButtonText}>
-                {duzenlenecekNot ? 'Güncelle' : 'Kaydet'}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
-    </Modal>
-  );
-
   const getTabBaslik = () => {
     switch (aktifTab) {
-      case 'borclar':
-        return 'Borçlarım';
-      case 'alacaklar':
-        return 'Alacaklarım';
-      case 'alinacaklar':
-        return 'Alınacaklar';
-      default:
-        return '';
+      case 'borclar': return 'Borçlarım';
+      case 'alacaklar': return 'Alacaklarım';
+      case 'alinacaklar': return 'Alınacaklar';
+      default: return '';
     }
   };
 
@@ -165,7 +121,7 @@ const Notlar = () => {
           style={styles.ekleButton}
           onPress={() => {
             setDuzenlenecekNot(null);
-            setYeniNot('');
+            setNotMetni('');
             setModalVisible(true);
           }}
         >
@@ -198,7 +154,50 @@ const Notlar = () => {
         ))}
       </ScrollView>
 
-      <NotModal />
+      <Modal
+        visible={modalVisible}
+        animationType="slide"
+        transparent={true}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalBaslik}>
+                {duzenlenecekNot ? 'Notu Düzenle' : 'Yeni Not Ekle'}
+              </Text>
+              <TouchableOpacity
+                style={styles.modalKapatButton}
+                onPress={() => {
+                  setModalVisible(false);
+                  setDuzenlenecekNot(null);
+                  setNotMetni('');
+                }}
+              >
+                <MaterialIcons name="close" size={24} color="#666" />
+              </TouchableOpacity>
+            </View>
+
+            <TextInput
+              style={styles.notInput}
+              placeholder="Notunuzu yazın..."
+              value={notMetni}
+              onChangeText={setNotMetni}
+              multiline
+            />
+
+            <View style={styles.modalButonlar}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.kaydetButton]}
+                onPress={duzenlenecekNot ? handleNotGuncelle : handleNotEkle}
+              >
+                <Text style={styles.kaydetButtonText}>
+                  {duzenlenecekNot ? 'Güncelle' : 'Kaydet'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -283,57 +282,54 @@ const styles = StyleSheet.create({
   silButton: {
     padding: 4,
   },
-  modalContainer: {
+  modalOverlay: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  modalContent: {
-    width: '80%',
-    backgroundColor: '#fff',
+    justifyContent: 'center',
     padding: 20,
+  },
+  modalContainer: {
+    backgroundColor: '#fff',
     borderRadius: 12,
-    elevation: 5,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
   },
   modalBaslik: {
     fontSize: 20,
     fontWeight: '600',
-    marginBottom: 16,
-    textAlign: 'center',
+    color: '#1A1A1A',
+  },
+  modalKapatButton: {
+    padding: 8,
   },
   notInput: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 16,
-    minHeight: 100,
+    padding: 16,
+    minHeight: 150,
+    fontSize: 16,
     textAlignVertical: 'top',
   },
   modalButonlar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
   },
   modalButton: {
-    flex: 1,
-    padding: 12,
+    paddingVertical: 12,
     borderRadius: 8,
     alignItems: 'center',
-    marginHorizontal: 4,
-  },
-  iptalButton: {
-    backgroundColor: '#FF5252',
   },
   kaydetButton: {
     backgroundColor: '#4CAF50',
   },
-  iptalButtonText: {
-    color: '#fff',
-    fontWeight: '600',
-  },
   kaydetButtonText: {
     color: '#fff',
+    fontSize: 16,
     fontWeight: '600',
   },
 });
